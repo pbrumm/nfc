@@ -47,6 +47,19 @@ class NFC
   end
 
   ###
+  # LED Control
+  def led= options
+    options ||= {}
+    state_control = 0x00 
+    state_control |= 0b101 if options[:red] == true
+    state_control |= 0b1010 if options[:green] == true
+    state_control |= 0b1111 if options[:orange] == true
+    state_control |= 0b10000 if options[:red_blink] == true
+    state_control |= 0b100000 if options[:green_blink] == true
+    device.configure Device::DCO_HANDLE_LED, state_control
+  end
+
+  ###
   # Get the device
   def device
     @device ||= NFC::Device.connect
@@ -92,16 +105,33 @@ class NFC
   #     end
   #   end
   def find
+    loop do 
+      @mutex.lock
+      begin
+        deactivate_field
+        self.infinite_list_passive = block_given?
+        self.crc = true
+        self.parity = true
+        activate_field
+        tag = detect
+        deselect
+      ensure
+        @mutex.unlock
+      end
+      if block_given?
+        resp = yield tag
+        if resp == false
+          return tag
+        end
+      else
+        return tag
+      end
+    end
+  ensure 
     @mutex.lock
     deactivate_field
-    self.infinite_list_passive = block_given?
-    self.crc = true
-    self.parity = true
-    activate_field
-    tag = detect
+    self.infinite_list_passive = false
     deselect
-    @mutex.unlock
-    yield tag if block_given?
-    tag
+    @mutex.unlock 
   end
 end
