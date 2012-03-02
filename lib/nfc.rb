@@ -21,7 +21,18 @@ class NFC
     @device = nil
     @mutex = Mutex.new
   end
+  def toggle_led(options)
+    state = calc_led_changes(options)
+    resp = @device.led(*state)
+    calc_led_state(resp)
+  end
 
+  def led_state
+    state = calc_led_changes()
+    resp = @device.led(*state)
+    calc_led_state(resp)
+
+  end
   ###
   # Deactivate the detection field
   def deactivate_field
@@ -103,5 +114,70 @@ class NFC
     @mutex.unlock
     yield tag if block_given?
     tag
+  end
+
+
+  def calc_led_changes(options)
+    return [0,0,0,0] if options.nil?
+    options[:blink_on_dur] ||= 0
+    options[:blink_off_dur] ||= options[:blink_on_dur]
+    options[:repeat] ||= 0
+    options[:current_color] ||= led_state
+    options[:blink_color] ||= nil
+    options[:init_blink_color] ||= nil
+    options[:final_color] ||= options[:current_color]
+    
+    p2_led_state = 0
+    t1_blink_dur = options[:blink_on_dur] / 10   # convert to miliseconds
+    t2_blink_dur = options[:blink_off_dur] / 10
+    b2_reps = options[:repeat].to_i
+
+    case options[:final_color]
+    when nil
+      p2_led_state |= 0b00001100
+    when :red
+      p2_led_state |= 0b00001101
+    when :green
+      p2_led_state |= 0b00001110
+    when :orange
+      p2_led_state |= 0b00001111
+    end
+
+    case options[:init_blink_color]
+    when nil
+      p2_led_state |= 0b00000000
+    when :red
+      p2_led_state |= 0b00010000
+    when :green
+      p2_led_state |= 0b00100000
+    when :orange
+      p2_led_state |= 0b00110000
+    end
+    case options[:blink_color]
+    when nil
+      p2_led_state |= 0b00000000
+    when :red
+      p2_led_state |= 0b01000000
+    when :green
+      p2_led_state |= 0b10000000
+    when :orange
+      p2_led_state |= 0b11000000
+    end
+
+
+
+    [p2_led_state, t1_blink_dur, t2_blink_dur, b2_reps]
+  end
+  def calc_led_state(num)
+    color = case num
+            when 1
+              :green
+            when 2
+              :red
+            when 3
+              :orange
+            when 0
+              nil
+    color
   end
 end

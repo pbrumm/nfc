@@ -118,6 +118,33 @@ static VALUE dev_deselect(VALUE self)
   return self;
 }
 
+/*
+ * call-seq:
+ *  change led
+ *
+ * Deselect the current tag
+ */
+static VALUE dev_led(VALUE self, VALUE led_state, VALUE t1_dur, VALUE t2_dur, VALUE b2_rep)
+{
+  nfc_device_t * dev;
+  byte_t *    pbtTx[9] = { 0xFF,0x00,0x40,0x00,0x04,0x00,0x00,0x00,0x00};
+  size_t      szTx = 9;
+  byte_t *    pbtRx;
+  size_t *    pszRx = 2; 
+  
+  pbtTx[3] = (byte_t) NUM2INT(led_state) & 0xFF;
+  pbtTx[5] = (byte_t) NUM2INT(t1_dur) & 0xFF;
+  pbtTx[6] = (byte_t) NUM2INT(t2_dur) & 0xFF;
+  pbtTx[7] = (byte_t) NUM2INT(b2_rep) & 0xFF;
+  Data_Get_Struct(self, nfc_device_t, dev);
+  //pbtTx = (byte_t *)calloc(9, sizeof(byte_t));
+  
+
+  nfc_initiator_transceive_bytes(dev, pbtTx, szTx, pbtRx, pszRx);
+  free(pbtTx);
+  return INT2NUM(pbtRx[1]);
+}
+
 static VALUE mod_initialize(VALUE self, VALUE type, VALUE baud)
 {
   nfc_modulation_t * mod;
@@ -167,6 +194,7 @@ void init_device()
   rb_define_method(cNfcDevice, "select", dev_select, 1);
   rb_define_method(cNfcDevice, "deselect", dev_deselect, 0);
   rb_define_method(cNfcDevice, "name", name, 0);
+  rb_define_method(cNfcDevice, "led", dev_led, 4);
 
   cNfcModulation = rb_define_class_under(cNfcDevice, "Modulation", rb_cObject);
 
