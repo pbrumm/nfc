@@ -10,8 +10,8 @@ VALUE cNfcISO14443A;
  */
 static VALUE szUidLen(VALUE self)
 {
-  nfc_iso14443a_info_t * tag;
-  Data_Get_Struct(self, nfc_iso14443a_info_t, tag);
+  nfc_iso14443a_info * tag;
+  Data_Get_Struct(self, nfc_iso14443a_info, tag);
 
   return INT2NUM(tag->szUidLen);
 }
@@ -24,8 +24,8 @@ static VALUE szUidLen(VALUE self)
  */
 static VALUE szAtsLen(VALUE self)
 {
-  nfc_iso14443a_info_t * tag;
-  Data_Get_Struct(self, nfc_iso14443a_info_t, tag);
+  nfc_iso14443a_info * tag;
+  Data_Get_Struct(self, nfc_iso14443a_info, tag);
 
   return INT2NUM(tag->szAtsLen);
 }
@@ -38,8 +38,8 @@ static VALUE szAtsLen(VALUE self)
  */
 static VALUE abtUid(VALUE self)
 {
-  nfc_iso14443a_info_t * tag;
-  Data_Get_Struct(self, nfc_iso14443a_info_t, tag);
+  nfc_iso14443a_info * tag;
+  Data_Get_Struct(self, nfc_iso14443a_info, tag);
 
   return rb_str_new(tag->abtUid, tag->szUidLen);
 }
@@ -52,8 +52,8 @@ static VALUE abtUid(VALUE self)
  */
 static VALUE abtAts(VALUE self)
 {
-  nfc_iso14443a_info_t * tag;
-  Data_Get_Struct(self, nfc_iso14443a_info_t, tag);
+  nfc_iso14443a_info * tag;
+  Data_Get_Struct(self, nfc_iso14443a_info, tag);
 
   return rb_str_new(tag->abtAts, tag->szAtsLen);
 }
@@ -66,8 +66,8 @@ static VALUE abtAts(VALUE self)
  */
 static VALUE abtAtqa(VALUE self)
 {
-  nfc_iso14443a_info_t * tag;
-  Data_Get_Struct(self, nfc_iso14443a_info_t, tag);
+  nfc_iso14443a_info * tag;
+  Data_Get_Struct(self, nfc_iso14443a_info, tag);
 
   return rb_str_new(tag->abtAtqa, 2);
 }
@@ -80,8 +80,8 @@ static VALUE abtAtqa(VALUE self)
  */
 static VALUE btSak(VALUE self)
 {
-  nfc_iso14443a_info_t * tag;
-  Data_Get_Struct(self, nfc_iso14443a_info_t, tag);
+  nfc_iso14443a_info * tag;
+  Data_Get_Struct(self, nfc_iso14443a_info, tag);
 
   return INT2NUM(tag->btSak);
 }

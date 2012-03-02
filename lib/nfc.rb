@@ -47,6 +47,12 @@ class NFC
   end
 
   ###
+  # Easy Framing
+  def easy_framing= v
+    device.configure Device::DCO_EASY_FRAMING, v ? 1 : 0
+  end
+
+  ###
   # Get the device
   def device
     @device ||= NFC::Device.connect

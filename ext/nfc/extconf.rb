@@ -15,7 +15,7 @@ unless find_header('nfc/nfc.h')
   abort "libnfc is missing.  please install libnfc: http://libnfc.org/"
 end
 
-unless find_library('nfc', 'nfc_connect')
+unless find_library('nfc', 'nfc_init')
   abort "libnfc is missing.  please install libnfc: http://libnfc.org/"
 end
 

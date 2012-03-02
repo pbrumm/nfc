@@ -12,40 +12,40 @@ VALUE cNfcFelica;
 
 static VALUE szLen(VALUE self)
 {
-  nfc_felica_info_t * tag;
-  Data_Get_Struct(self, nfc_felica_info_t, tag);
+  nfc_felica_info * tag;
+  Data_Get_Struct(self, nfc_felica_info, tag);
 
   return INT2NUM(tag->szLen);
 }
 
 static VALUE btResCode(VALUE self)
 {
-  nfc_felica_info_t * tag;
-  Data_Get_Struct(self, nfc_felica_info_t, tag);
+  nfc_felica_info * tag;
+  Data_Get_Struct(self, nfc_felica_info, tag);
 
   return INT2NUM(tag->btResCode);
 }
 
 static VALUE abtId(VALUE self)
 {
-  nfc_felica_info_t * tag;
-  Data_Get_Struct(self, nfc_felica_info_t, tag);
+  nfc_felica_info * tag;
+  Data_Get_Struct(self, nfc_felica_info, tag);
 
   return rb_str_new(tag->abtId, 8 );
 }
 
 static VALUE abtPad(VALUE self)
 {
-  nfc_felica_info_t * tag;
-  Data_Get_Struct(self, nfc_felica_info_t, tag);
+  nfc_felica_info * tag;
+  Data_Get_Struct(self, nfc_felica_info, tag);
 
   return rb_str_new(tag->abtPad, 8 );
 }
 
 static VALUE abtSysCode(VALUE self)
 {
-  nfc_felica_info_t * tag;
-  Data_Get_Struct(self, nfc_felica_info_t, tag);
+  nfc_felica_info * tag;
+  Data_Get_Struct(self, nfc_felica_info, tag);
 
   return rb_str_new(tag->abtSysCode, 2 );
 }

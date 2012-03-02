@@ -1,6 +1,6 @@
 #include <nfc_device.h>
 
-static byte_t abtFelica[5] = { 0x00, 0xff, 0xff, 0x00, 0x00 };
+static uint8_t abtFelica[5] = { 0x00, 0xff, 0xff, 0x00, 0x00 };
 
 /*
  * call-seq:
@@ -10,12 +10,17 @@ static byte_t abtFelica[5] = { 0x00, 0xff, 0xff, 0x00, 0x00 };
  */
 static VALUE connect(VALUE klass)
 {
-  nfc_device_t * dev = nfc_connect(NULL);
+  nfc_init(NULL);
+  nfc_device * dev = nfc_open(NULL, NULL);
   if(!dev)
     rb_raise(rb_eRuntimeError, "could not find NFC device");
 
-  if(!nfc_initiator_init(dev))
+  if(nfc_initiator_init(dev) < 0)
+  {
+    nfc_perror (dev, "nfc_initiator_init");
+
     rb_raise(rb_eRuntimeError, "oh snap, could not init");
+  }
 
   return Data_Wrap_Struct(klass, 0, 0, dev);
 }
@@ -28,8 +33,8 @@ static VALUE connect(VALUE klass)
  */
 static VALUE disconnect(VALUE self)
 {
-  nfc_device_t * dev;
-  Data_Get_Struct(self, nfc_device_t, dev);
+  nfc_device * dev;
+  Data_Get_Struct(self, nfc_device, dev);
   nfc_disconnect(dev);
 
   return self;
@@ -43,15 +48,16 @@ static VALUE disconnect(VALUE self)
  */
 static VALUE configure(VALUE self, VALUE option, VALUE flag)
 {
-  nfc_device_t * dev;
-  Data_Get_Struct(self, nfc_device_t, dev);
+  nfc_device * dev;
+  Data_Get_Struct(self, nfc_device, dev);
 
-  nfc_configure(
-    dev,
-    (const nfc_device_option_t)NUM2INT(option),
-    (const bool)NUM2INT(flag)
-  );
+ // nfc_configure(
+ //   dev,
+ //   (const nfc_device_option)NUM2INT(option),
+//    (const bool)NUM2INT(flag)
+//  );
 
+ // nfc_perror(dev, "nfc_configure");
   return self;
 }
 
@@ -63,14 +69,14 @@ static VALUE configure(VALUE self, VALUE option, VALUE flag)
  */
 static VALUE dev_select(VALUE self, VALUE tag)
 {
-  nfc_device_t * dev;
-  nfc_modulation_t * mod;
-  nfc_target_t * ti;
+  nfc_device * dev;
+  nfc_modulation * mod;
+  nfc_target * ti;
 
-  Data_Get_Struct(self, nfc_device_t, dev);
-  Data_Get_Struct(tag, nfc_modulation_t, mod);
+  Data_Get_Struct(self, nfc_device, dev);
+  Data_Get_Struct(tag, nfc_modulation, mod);
 
-  ti = (nfc_target_t *)calloc(1, sizeof(nfc_target_t));
+  ti = (nfc_target *)calloc(1, sizeof(nfc_target));
 
   if (nfc_initiator_select_passive_target(dev, *mod, NULL, 0, ti) ) {
     switch(mod->nmt) {
@@ -96,10 +102,10 @@ static VALUE dev_select(VALUE self, VALUE tag)
  */
 static VALUE name(VALUE self)
 {
-  nfc_device_t * dev;
-  Data_Get_Struct(self, nfc_device_t, dev);
+  nfc_device * dev;
+  Data_Get_Struct(self, nfc_device, dev);
 
-  return rb_str_new2(dev->acName);
+  return rb_str_new2(nfc_device_get_name(dev));
 }
 
 /*
@@ -110,19 +116,46 @@ static VALUE name(VALUE self)
  */
 static VALUE dev_deselect(VALUE self)
 {
-  nfc_device_t * dev;
-  Data_Get_Struct(self, nfc_device_t, dev);
+  nfc_device * dev;
+  Data_Get_Struct(self, nfc_device, dev);
 
   nfc_initiator_deselect_target(dev);
 
   return self;
 }
 
+/*
+ * call-seq:
+ *  change led
+ *
+ * Deselect the current tag
+ */
+static VALUE dev_led(VALUE self, VALUE value)
+{
+  nfc_device * dev;
+  uint8_t      pbtTx[9] = {0xFF,0x00,0x40,NUM2INT(value),0x04,0x0a,0x00,0x01,0x01};
+  size_t      szTx = sizeof(pbtTx);
+  size_t      timeout = -1;
+  uint8_t      pbtRx[2];
+  size_t      pszRx = sizeof(pbtRx);
+   
+  Data_Get_Struct(self, nfc_device, dev);
+  if(!nfc_initiator_transceive_bytes(dev, pbtTx, szTx, &pbtRx, &pszRx,NULL)) {
+    printf("ERROR while transceiving...\n");
+    printf("%d\n", pszRx);
+    //free(pbtTx);
+    return 1;
+  } else {
+    //free(pbtTx);
+    return 2;
+  }
+}
+
 static VALUE mod_initialize(VALUE self, VALUE type, VALUE baud)
 {
-  nfc_modulation_t * mod;
+  nfc_modulation * mod;
 
-  Data_Get_Struct(self, nfc_modulation_t, mod);
+  Data_Get_Struct(self, nfc_modulation, mod);
   mod->nmt = NUM2INT(type);
   mod->nbr = NUM2INT(baud);
 
@@ -131,27 +164,27 @@ static VALUE mod_initialize(VALUE self, VALUE type, VALUE baud)
 
 static VALUE mod_alloc(VALUE klass)
 {
-  nfc_modulation_t * modulation;
+  nfc_modulation * modulation;
 
-  modulation = xcalloc(1, sizeof(nfc_modulation_t));
+  modulation = xcalloc(1, sizeof(nfc_modulation));
 
   return Data_Wrap_Struct(klass, NULL, xfree, modulation);
 }
 
 static VALUE mod_nmt(VALUE self)
 {
-  nfc_modulation_t * mod;
+  nfc_modulation * mod;
 
-  Data_Get_Struct(self, nfc_modulation_t, mod);
+  Data_Get_Struct(self, nfc_modulation, mod);
 
   return INT2NUM(mod->nmt);
 }
 
 static VALUE mod_nbr(VALUE self)
 {
-  nfc_modulation_t * mod;
+  nfc_modulation * mod;
 
-  Data_Get_Struct(self, nfc_modulation_t, mod);
+  Data_Get_Struct(self, nfc_modulation, mod);
 
   return INT2NUM(mod->nbr);
 }
@@ -167,6 +200,7 @@ void init_device()
   rb_define_method(cNfcDevice, "select", dev_select, 1);
   rb_define_method(cNfcDevice, "deselect", dev_deselect, 0);
   rb_define_method(cNfcDevice, "name", name, 0);
+  rb_define_method(cNfcDevice, "led", dev_led, 1);
 
   cNfcModulation = rb_define_class_under(cNfcDevice, "Modulation", rb_cObject);
 
