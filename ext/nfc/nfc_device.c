@@ -130,25 +130,32 @@ static VALUE dev_deselect(VALUE self)
  *
  * Deselect the current tag
  */
-static VALUE dev_led(VALUE self, VALUE value)
+static VALUE dev_led(VALUE self, VALUE led_state, VALUE t1_dur, VALUE t2_dur, VALUE b2_rep)
 {
   nfc_device * dev;
-  uint8_t      pbtTx[9] = {0xFF,0x00,0x40,NUM2INT(value),0x04,0x0a,0x00,0x01,0x01};
+  uint8_t   pbtTx[9] = { 0xFF,0x00,0x40,0x00,0x04,0x00,0x00,0x00,0x00};
+  uint8_t    byte_conv = 0;
   size_t      szTx = sizeof(pbtTx);
   size_t      timeout = -1;
-  uint8_t      pbtRx[2];
+  uint8_t *    pbtRx[2];
   size_t      pszRx = sizeof(pbtRx);
-   
+  byte_conv = (int) NUM2INT(led_state) & 0xFF; 
+  printf("%i %i\n", szTx, byte_conv);
+  pbtTx[3] = byte_conv;
+  pbtTx[5] = (uint8_t) NUM2INT(t1_dur) & 0xFF;
+  pbtTx[6] = (uint8_t) NUM2INT(t2_dur) & 0xFF;
+  pbtTx[7] = (uint8_t) NUM2INT(b2_rep) & 0xFF;
   Data_Get_Struct(self, nfc_device, dev);
-  if(!nfc_initiator_transceive_bytes(dev, pbtTx, szTx, &pbtRx, &pszRx,NULL)) {
+  
+
+  if(nfc_initiator_transceive_bytes(dev, pbtTx, szTx, &pbtRx, &pszRx,NULL) < 0) {
     printf("ERROR while transceiving...\n");
     printf("%d\n", pszRx);
-    //free(pbtTx);
-    return 1;
-  } else {
-    //free(pbtTx);
-    return 2;
+    return T_FALSE;
+  }else {
+
   }
+  return INT2NUM(pbtRx[1]);
 }
 
 static VALUE mod_initialize(VALUE self, VALUE type, VALUE baud)
@@ -200,7 +207,7 @@ void init_device()
   rb_define_method(cNfcDevice, "select", dev_select, 1);
   rb_define_method(cNfcDevice, "deselect", dev_deselect, 0);
   rb_define_method(cNfcDevice, "name", name, 0);
-  rb_define_method(cNfcDevice, "led", dev_led, 1);
+  rb_define_method(cNfcDevice, "led", dev_led, 4);
 
   cNfcModulation = rb_define_class_under(cNfcDevice, "Modulation", rb_cObject);
 
